@@ -115,7 +115,7 @@ pack.addFormula({
   },
 });
 
-// Add a formula to stream responses (optional)
+// Create a formula to stream responses (optional)
 pack.addFormula({
   name: "AskFlowiseStream",
   description: "Ask a question to your Flowise AI chatflow with streaming response",
@@ -134,17 +134,29 @@ pack.addFormula({
   resultType: coda.ValueType.String,
   isAction: false,
   execute: async function ([chatflowId, question], context) {
-    const endpoint = context.endpoint || "https://flowise.revou.tech";
+    let endpoint = context.endpoint || "https://flowise.revou.tech";
+    
+    // Ensure endpoint doesn't end with a slash
+    endpoint = endpoint.replace(/\/$/, '');
     
     try {
+      // Validate endpoint URL
+      if (!endpoint.startsWith('http')) {
+        throw new coda.UserVisibleError("Invalid API endpoint. URL must start with http:// or https://");
+      }
+
       const response = await context.fetcher.fetch({
         method: "POST",
-        url: `${endpoint}/api/v1/prediction/${chatflowId}/stream`,
+        url: `${endpoint}/api/v1/prediction/${chatflowId}`,
         headers: {
           "Content-Type": "application/json",
+          // Add CORS headers
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "POST, OPTIONS",
         },
         body: JSON.stringify({
           question: question,
+          streaming: true
         }),
       });
 
