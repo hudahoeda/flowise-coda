@@ -147,6 +147,7 @@ pack.addFormula({
         url: `${endpoint}/api/v1/prediction/${chatflowId}`,
         headers: {
           "Content-Type": "application/json",
+          "Accept": "text/event-stream",
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "POST, OPTIONS",
         },
@@ -157,15 +158,34 @@ pack.addFormula({
         }),
       });
 
-      if (response.body.error) {
-        throw new coda.UserVisibleError(`Flowise Streaming Error: ${response.body.error}`);
+      // Parse SSE response
+      let fullText = '';
+      const events = response.body.split('\n\n');
+      
+      for (const event of events) {
+        if (!event.trim()) continue;
+        
+        const lines = event.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data:')) {
+            try {
+              const data = JSON.parse(line.slice(5));
+              if (data.event === 'token' && data.data) {
+                fullText += data.data;
+              }
+            } catch (e) {
+              // Skip invalid JSON
+              continue;
+            }
+          }
+        }
       }
 
-      if (!response.body.text) {
+      if (!fullText) {
         throw new coda.UserVisibleError("Invalid streaming response from Flowise API");
       }
 
-      return response.body.text;
+      return fullText;
 
     } catch (error) {
       if (error instanceof coda.UserVisibleError) {
