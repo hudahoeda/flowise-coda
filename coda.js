@@ -9,11 +9,13 @@ pack.setUserAuthentication({
   instructionsUrl: "https://docs.flowiseai.com/",
   // Add optional endpoint URL for self-hosted instances
   requiresEndpointUrl: true,
+  // Specify your self-hosted domain as the primary domain
+  networkDomain: "flowise.revou.tech",
   getConnectionName: async function (context) {
     try {
       const response = await context.fetcher.fetch({
         method: "GET",
-        url: `${context.endpoint || "https://api.flowiseai.com"}/api/v1/ping`,
+        url: `${context.endpoint || "https://flowise.revou.tech"}/api/v1/ping`,
       });
       return response.body?.message || "Flowise Connection";
     } catch (error) {
@@ -22,11 +24,8 @@ pack.setUserAuthentication({
   },
 });
 
-// Add system authentication for the API endpoint
-pack.addNetworkDomain("flowiseai.com");
-
-// Add any custom domains for self-hosted instances
-pack.addNetworkDomain("flowise.revou.tech"); // Add your domain if self-hosted
+// Add system authentication for your self-hosted domain only
+pack.addNetworkDomain("flowise.revou.tech");
 
 // Create a formula to make predictions using Flowise
 pack.addFormula({
@@ -48,7 +47,7 @@ pack.addFormula({
   isAction: false,
   execute: async function ([chatflowId, question], context) {
     // Get endpoint from authentication or use default
-    let endpoint = context.endpoint || "https://api.flowiseai.com";
+    let endpoint = context.endpoint || "https://flowise.revou.tech";
     
     // Ensure endpoint doesn't end with a slash
     endpoint = endpoint.replace(/\/$/, '');
@@ -135,7 +134,7 @@ pack.addFormula({
   resultType: coda.ValueType.String,
   isAction: false,
   execute: async function ([chatflowId, question], context) {
-    const endpoint = context.endpoint || "https://api.flowiseai.com";
+    const endpoint = context.endpoint || "https://flowise.revou.tech";
     
     try {
       const response = await context.fetcher.fetch({
