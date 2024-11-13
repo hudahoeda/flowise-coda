@@ -7,9 +7,7 @@ pack.setUserAuthentication({
   type: coda.AuthenticationType.CustomHeaderToken,
   headerName: "Authorization",
   instructionsUrl: "https://docs.flowiseai.com/",
-  // Add optional endpoint URL for self-hosted instances
   requiresEndpointUrl: true,
-  // Specify your self-hosted domain as the primary domain
   networkDomain: "flowise.revou.tech",
   getConnectionName: async function (context) {
     try {
@@ -44,16 +42,17 @@ pack.addFormula({
     }),
   ],
   resultType: coda.ValueType.String,
+  schema: coda.makeSchema({
+    type: coda.ValueType.String,
+    codaType: coda.ValueHintType.Markdown,
+  }),
   isAction: false,
   execute: async function ([chatflowId, question], context) {
-    // Get endpoint from authentication or use default
     let endpoint = context.endpoint || "https://flowise.revou.tech";
     
-    // Ensure endpoint doesn't end with a slash
     endpoint = endpoint.replace(/\/$/, '');
     
     try {
-      // Validate endpoint URL
       if (!endpoint.startsWith('http')) {
         throw new coda.UserVisibleError("Invalid API endpoint. URL must start with http:// or https://");
       }
@@ -63,21 +62,19 @@ pack.addFormula({
         url: `${endpoint}/api/v1/prediction/${chatflowId}`,
         headers: {
           "Content-Type": "application/json",
-          // Add CORS headers
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "POST, OPTIONS",
         },
         body: JSON.stringify({
           question: question,
+          responseFormat: "markdown"
         }),
       });
 
-      // Check if response has error property
       if (response.body.error) {
         throw new coda.UserVisibleError(`Flowise Error: ${response.body.error}`);
       }
 
-      // Check if response has expected text property
       if (!response.body.text) {
         throw new coda.UserVisibleError("Invalid response from Flowise API");
       }
@@ -85,7 +82,6 @@ pack.addFormula({
       return response.body.text;
 
     } catch (error) {
-      // Improve error handling with more specific messages
       if (error instanceof coda.UserVisibleError) {
         throw error;
       }
@@ -105,7 +101,6 @@ pack.addFormula({
         }
       }
 
-      // Network or connection errors
       if (error.message?.includes('ECONNREFUSED')) {
         throw new coda.UserVisibleError("Could not connect to Flowise server. Please check if the server is running and accessible.");
       }
@@ -115,7 +110,7 @@ pack.addFormula({
   },
 });
 
-// Create a formula to stream responses (optional)
+// Create a formula to stream responses
 pack.addFormula({
   name: "AskFlowiseStream",
   description: "Ask a question to your Flowise AI chatflow with streaming response",
@@ -132,15 +127,17 @@ pack.addFormula({
     }),
   ],
   resultType: coda.ValueType.String,
+  schema: coda.makeSchema({
+    type: coda.ValueType.String,
+    codaType: coda.ValueHintType.Markdown,
+  }),
   isAction: false,
   execute: async function ([chatflowId, question], context) {
     let endpoint = context.endpoint || "https://flowise.revou.tech";
     
-    // Ensure endpoint doesn't end with a slash
     endpoint = endpoint.replace(/\/$/, '');
     
     try {
-      // Validate endpoint URL
       if (!endpoint.startsWith('http')) {
         throw new coda.UserVisibleError("Invalid API endpoint. URL must start with http:// or https://");
       }
@@ -150,22 +147,20 @@ pack.addFormula({
         url: `${endpoint}/api/v1/prediction/${chatflowId}`,
         headers: {
           "Content-Type": "application/json",
-          // Add CORS headers
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "POST, OPTIONS",
         },
         body: JSON.stringify({
           question: question,
-          streaming: true
+          streaming: true,
+          responseFormat: "markdown"
         }),
       });
 
-      // Check for streaming response errors
       if (response.body.error) {
         throw new coda.UserVisibleError(`Flowise Streaming Error: ${response.body.error}`);
       }
 
-      // Handle streaming response
       if (!response.body.text) {
         throw new coda.UserVisibleError("Invalid streaming response from Flowise API");
       }
@@ -173,12 +168,10 @@ pack.addFormula({
       return response.body.text;
 
     } catch (error) {
-      // Handle network errors
       if (error instanceof coda.UserVisibleError) {
         throw error;
       }
       
-      // Handle API errors
       if (error.statusCode) {
         switch (error.statusCode) {
           case 401:
@@ -192,7 +185,6 @@ pack.addFormula({
         }
       }
 
-      // Handle other errors
       throw new coda.UserVisibleError("Failed to connect to Flowise streaming API. Please check your connection and try again.");
     }
   },
