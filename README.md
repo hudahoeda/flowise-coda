@@ -32,7 +32,7 @@ Makes a single request to your Flowise chatflow and returns the response.
 
 **Example:** 
 
-###**=AskFlowise("01234567-89ab-cdef-0123-456789abcdef", "What is Python?")**
+### **=AskFlowise("01234567-89ab-cdef-0123-456789abcdef", "What is Python?")**
 
 
 ### 2. AskFlowiseStream
@@ -48,7 +48,7 @@ Makes a streaming request to your Flowise chatflow and returns the complete resp
 
 **Example:**
 
-###**=AskFlowiseStream("01234567-89ab-cdef-0123-456789abcdef", "Explain machine learning")
+### **=AskFlowiseStream("01234567-89ab-cdef-0123-456789abcdef", "Explain machine learning")**
 
 
 ## Response Format
